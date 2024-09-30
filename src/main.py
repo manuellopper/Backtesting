@@ -354,10 +354,10 @@ def main(log_to_file=False):
     
     # Configuración del backtest
     symbol = 'SPY'
-    start_date = '2010-01-01'
+    start_date = '2015-01-01'
     end_date = '2023-05-31'
     initial_capital = 10000
-    benchmarks = ['QQQ', 'IWM']  # Añadimos benchmarks adicionales
+    benchmarks = ['URTH','SPY']  # Añadimos benchmarks adicionales. Ejemplo varios = ['SPY','QQQ']
 
     # Creamos una instancia de la estrategia con sus parámetros específicos
     strategy_params = {
