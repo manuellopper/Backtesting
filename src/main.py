@@ -150,6 +150,51 @@ class SimpleMovingAverageCrossover(Strategy):
     def required_data(self) -> List[str]:
         return ['Close']
 
+
+
+class BreakoutStrategy(Strategy):
+    def __init__(self, params: Dict[str, Any]):
+        super().__init__(params)
+        self.lookback_period = self.params['lookback_period']
+        self.breakout_threshold = self.params['breakout_threshold']
+        self.price_history = []
+
+    @classmethod
+    def validate_params(cls, params: Dict[str, Any]):
+        if 'lookback_period' not in params or 'breakout_threshold' not in params:
+            raise ValueError("Los parámetros deben incluir 'lookback_period' y 'breakout_threshold'")
+        if params['lookback_period'] <= 0 or params['breakout_threshold'] <= 0:
+            raise ValueError("'lookback_period' y 'breakout_threshold' deben ser mayores que cero")
+
+    def generate_signal(self, date: pd.Timestamp, data: pd.Series) -> int:
+        close_price = data['Close']
+        self.price_history.append(close_price)
+
+        if len(self.price_history) > self.lookback_period:
+            self.price_history = self.price_history[-self.lookback_period:]
+
+        if len(self.price_history) < self.lookback_period:
+            return 0  # No hay suficientes datos para generar una señal
+
+        recent_high = max(self.price_history[:-1])  # Excluye el precio actual
+        recent_low = min(self.price_history[:-1])  # Excluye el precio actual
+
+        # Calcula los niveles de breakout
+        upper_breakout = recent_high + (recent_high * self.breakout_threshold)
+        lower_breakout = recent_low - (recent_low * self.breakout_threshold)
+
+        if close_price > upper_breakout:
+            logger.info(f"{date}: Señal de compra generada (Breakout alcista)")
+            return 1  # Señal de compra
+        elif close_price < lower_breakout:
+            logger.info(f"{date}: Señal de venta generada (Breakout bajista)")
+            return -1  # Señal de venta
+        else:
+            return 0  # Mantener
+
+    def required_data(self) -> List[str]:
+        return ['Close']
+
 # 3. Módulo de Backtesting (Backtester)
 
 
@@ -224,7 +269,7 @@ class ResultAnalyzer:
     def calculate_returns(self):
         self.results['Strategy_Returns'] = self.results['Total'].pct_change()
         for benchmark in self.benchmarks:
-            self.results[f'{benchmark}_Returns'] = self.results[f'{benchmark}_Value'].pct_change()
+            self.results[f'{benchmark}_Returns'] = self.results[f'{benchmark}_Value'].ffill().pct_change()
 
     def calculate_metrics(self):
         strategy_returns = self.results['Strategy_Returns'].dropna()
@@ -360,11 +405,20 @@ def main(log_to_file=False):
     benchmarks = ['URTH','SPY']  # Añadimos benchmarks adicionales. Ejemplo varios = ['SPY','QQQ']
 
     # Creamos una instancia de la estrategia con sus parámetros específicos
+    
+    #ESTRATEGIA SIMPLE MOVIN AVERAGE CROSSOVER
+    #strategy_params = {
+    #    'short_window': 50,
+    #    'long_window': 200
+    #}
+    #strategy = SimpleMovingAverageCrossover(strategy_params)
+
+    #ESTRATEGIA BREACKOUT
     strategy_params = {
-        'short_window': 50,
-        'long_window': 200
+        'lookback_period': 20,
+        'breakout_threshold': 0.02  # 2%
     }
-    strategy = SimpleMovingAverageCrossover(strategy_params)
+    strategy = BreakoutStrategy(strategy_params)
 
     # Ejecutamos el backtesting
     run_backtest(symbol, start_date, end_date, strategy, initial_capital, benchmarks)
