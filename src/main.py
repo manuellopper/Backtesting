@@ -7,11 +7,43 @@ import matplotlib.pyplot as plt
 from matplotlib.dates import DateFormatter
 import logging
 import os
+import sys 
+
 
 # Configuración del logging.
-logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
+def setup_logging(log_to_file=False):
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+
+    # Configurar el logging a la consola
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setFormatter(formatter)
+    logger.addHandler(console_handler)
+
+    # Configurar el logging a un archivo si log_to_file es True
+    if log_to_file:
+        # Obtener el directorio actual
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+
+        # Subir un nivel y crear la ruta al directorio 'logs'
+        logs_dir = os.path.join(os.path.dirname(current_dir), 'logs')
+
+        # Asegurarse de que el directorio 'logs' existe
+        os.makedirs(logs_dir, exist_ok=True)
+
+        # Crear la ruta completa del archivo de log
+        log_file_path = os.path.join(logs_dir, 'backtest.log')
+
+        file_handler = logging.FileHandler(log_file_path)
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+
+        logger.info(f"Archivo de log creado en: {log_file_path}")
+
+    return logger
+
 
 # 1. Módulo de Datos (DataLoader)
 
@@ -261,7 +293,11 @@ def run_backtest(symbol: str, start_date: str, end_date: str, strategy: Strategy
     logger.info("Backtesting completado")
 
 
-def main():
+def main(log_to_file=False):
+    global logger
+    logger = setup_logging(log_to_file)
+    
+    
     # Configuración del backtest
     symbol = 'SPY'
     start_date = '2010-01-01'
@@ -280,4 +316,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main(log_to_file=True)
