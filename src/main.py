@@ -208,101 +208,156 @@ class Portfolio:
 
 
 class ResultAnalyzer:
-    def __init__(self, results: List[Dict]):
+    def __init__(self, results: List[Dict], benchmarks: List[str], initial_capital: float):
         self.results = pd.DataFrame(results).set_index('Date')
+        self.benchmarks = benchmarks
+        self.initial_capital = initial_capital
+        self.load_benchmark_data()
+
+    def load_benchmark_data(self):
+        for benchmark in self.benchmarks:
+            benchmark_data = yf.download(benchmark, start=self.results.index[0], end=self.results.index[-1])['Close']
+            # Normalizar el benchmark al capital inicial
+            benchmark_normalized = benchmark_data / benchmark_data.iloc[0] * self.initial_capital
+            self.results[f'{benchmark}_Value'] = benchmark_normalized
 
     def calculate_returns(self):
         self.results['Strategy_Returns'] = self.results['Total'].pct_change()
-        self.results['Benchmark_Returns'] = self.results['Close'].pct_change()
+        for benchmark in self.benchmarks:
+            self.results[f'{benchmark}_Returns'] = self.results[f'{benchmark}_Value'].pct_change()
 
     def calculate_metrics(self):
         strategy_returns = self.results['Strategy_Returns'].dropna()
-        benchmark_returns = self.results['Benchmark_Returns'].dropna()
 
-        sharpe_ratio = np.sqrt(
-            252) * strategy_returns.mean() / strategy_returns.std()
-        total_return = (self.results['Total'].iloc[-1] /
-                        self.results['Total'].iloc[0]) - 1
+        # Sharpe Ratio
+        risk_free_rate = 0.02  # Asumimos una tasa libre de riesgo del 2%
+        excess_returns = strategy_returns - risk_free_rate / 252
+        sharpe_ratio = np.sqrt(252) * excess_returns.mean() / excess_returns.std()
+
+        # Sortino Ratio
+        downside_returns = excess_returns[excess_returns < 0]
+        sortino_ratio = np.sqrt(252) * excess_returns.mean() / downside_returns.std()
+
+        # Maximum Drawdown
+        cum_returns = (1 + strategy_returns).cumprod()
+        running_max = cum_returns.cummax()
+        drawdown = (cum_returns - running_max) / running_max
+        max_drawdown = drawdown.min()
+
+        # Total Return
+        total_return = (self.results['Total'].iloc[-1] / self.results['Total'].iloc[0]) - 1
 
         logger.info(f"Sharpe Ratio: {sharpe_ratio:.2f}")
+        logger.info(f"Sortino Ratio: {sortino_ratio:.2f}")
+        logger.info(f"Maximum Drawdown: {max_drawdown:.2%}")
         logger.info(f"Total Return: {total_return:.2%}")
 
+        # Métricas para benchmarks
+        for benchmark in self.benchmarks:
+            benchmark_returns = self.results[f'{benchmark}_Returns'].dropna()
+            benchmark_excess_returns = benchmark_returns - risk_free_rate / 252
+            
+            # Alpha and Beta
+            covariance = np.cov(strategy_returns, benchmark_returns)
+            beta = covariance[0, 1] / covariance[1, 1]
+            alpha = strategy_returns.mean() * 252 - risk_free_rate - beta * (benchmark_returns.mean() * 252 - risk_free_rate)
+            
+            # Correlation
+            correlation = strategy_returns.corr(benchmark_returns)
+            
+            # Information Ratio
+            active_returns = strategy_returns - benchmark_returns
+            information_ratio = np.sqrt(252) * active_returns.mean() / active_returns.std()
+            
+            logger.info(f"\nMétricas para {benchmark}:")
+            logger.info(f"Alpha: {alpha:.4f}")
+            logger.info(f"Beta: {beta:.2f}")
+            logger.info(f"Correlation: {correlation:.2f}")
+            logger.info(f"Information Ratio: {information_ratio:.2f}")
+
     def plot_results(self):
+        # Gráfico 1: Strategy Performance con señales de compra/venta efectivas
+        fig1, ax1 = plt.subplots(figsize=(12, 6))
 
-        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 10), sharex=True)
+        ax1.plot(self.results.index, self.results['Total'], label='Strategy', linewidth=2)
+        ax1.set_xlabel('Date')
+        ax1.set_ylabel('Portfolio Value')
+        ax1.set_title('Strategy Performance with Effective Buy/Sell Signals')
 
-        ax1.set_ylabel('Portfolio Value', color='tab:blue')
-        ax1.plot(self.results.index,
-                 self.results['Total'], color='tab:blue', label='Strategy')
-        ax1.tick_params(axis='y', labelcolor='tab:blue')
+        # Calcular cambios en las tenencias para identificar compras y ventas efectivas
+        holdings_change = self.results['Holdings'].diff()
 
-        ax2.set_xlabel('Date')
-        ax2.set_ylabel('Symbol Price', color='tab:orange')
-        ax2.plot(self.results.index,
-                 self.results['Close'], color='tab:orange', label='Symbol Price')
-        ax2.tick_params(axis='y', labelcolor='tab:orange')
+        # Añadir señales de compra y venta efectivas
+        buy_signals = self.results[holdings_change > 0].index
+        sell_signals = self.results[holdings_change < 0].index
 
-        buy_signals = self.results[self.results['Signal'] == 1].index
-        sell_signals = self.results[self.results['Signal'] == -1].index
-
-        ax2.scatter(buy_signals, self.results.loc[buy_signals,
-                    'Close'], color='green', marker='^', label='Buy Signal')
-        ax2.scatter(sell_signals, self.results.loc[sell_signals,
-                    'Close'], color='red', marker='v', label='Sell Signal')
+        ax1.scatter(buy_signals, self.results.loc[buy_signals, 'Total'], color='green', marker='^', label='Buy')
+        ax1.scatter(sell_signals, self.results.loc[sell_signals, 'Total'], color='red', marker='v', label='Sell')
 
         ax1.legend(loc='upper left')
-        ax2.legend(loc='upper left')
-        plt.title('Backtest Results')
 
         date_formatter = DateFormatter("%Y-%m-%d")
-        ax2.xaxis.set_major_formatter(date_formatter)
-        fig.autofmt_xdate()
+        ax1.xaxis.set_major_formatter(date_formatter)
+        fig1.autofmt_xdate()
 
         plt.tight_layout()
 
-        # Obtener el directorio actual
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-
-        # Subir un nivel y crear la ruta al directorio 'plots'
-        plots_dir = os.path.join(os.path.dirname(current_dir), 'plots')
-
-        # Asegurarse de que el directorio 'plots' existe
+        # Guardar el primer gráfico
+        plots_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'plots')
         os.makedirs(plots_dir, exist_ok=True)
+        file_path1 = os.path.join(plots_dir, 'strategy_performance.jpg')
+        plt.savefig(file_path1, dpi=300, bbox_inches='tight')
+        logger.info(f"Gráfico de rendimiento de la estrategia guardado como '{file_path1}'")
+        plt.close(fig1)
 
-        # Crear la ruta completa del archivo
-        file_path = os.path.join(plots_dir, 'backtest_results.jpg')
+        # Gráfico 2: Strategy Performance vs Benchmarks
+        fig2, ax2 = plt.subplots(figsize=(12, 6))
 
-        # Guardar el gráfico
-        plt.savefig(file_path, dpi=300, bbox_inches='tight')
-        logger.info(f"Gráfico de resultados guardado como '{file_path}'")
-        plt.close()
+        ax2.plot(self.results.index, self.results['Total'], label='Strategy', linewidth=2)
 
+        # Plotear benchmarks
+        colors = plt.cm.rainbow(np.linspace(0, 1, len(self.benchmarks)))
+        for benchmark, color in zip(self.benchmarks, colors):
+            ax2.plot(self.results.index, self.results[f'{benchmark}_Value'], color=color, label=benchmark, linewidth=1, alpha=0.7)
 
-def run_backtest(symbol: str, start_date: str, end_date: str, strategy: Strategy, initial_capital: float):
-    logger.info(
-        f"Iniciando backtesting para {symbol} desde {start_date} hasta {end_date}")
+        ax2.set_xlabel('Date')
+        ax2.set_ylabel('Portfolio Value')
+        ax2.set_title('Strategy Performance vs Benchmarks')
+        ax2.legend(loc='upper left')
 
-    backtester = Backtester(symbol, start_date, end_date,
-                            strategy, initial_capital)
+        ax2.xaxis.set_major_formatter(date_formatter)
+        fig2.autofmt_xdate()
+
+        plt.tight_layout()
+
+        # Guardar el segundo gráfico
+        file_path2 = os.path.join(plots_dir, 'strategy_vs_benchmarks.jpg')
+        plt.savefig(file_path2, dpi=300, bbox_inches='tight')
+        logger.info(f"Gráfico de estrategia vs benchmarks guardado como '{file_path2}'")
+        plt.close(fig2)
+
+def run_backtest(symbol: str, start_date: str, end_date: str, strategy: Strategy, initial_capital: float, benchmarks: List[str]):
+    logger.info(f"Iniciando backtesting para {symbol} desde {start_date} hasta {end_date}")
+
+    backtester = Backtester(symbol, start_date, end_date, strategy, initial_capital)
     backtester.run()
 
-    analyzer = ResultAnalyzer(backtester.results)
+    analyzer = ResultAnalyzer(backtester.results, benchmarks, initial_capital)
     analyzer.calculate_returns()
     analyzer.calculate_metrics()
     analyzer.plot_results()
     logger.info("Backtesting completado")
 
-
 def main(log_to_file=False):
     global logger
     logger = setup_logging(log_to_file)
-    
     
     # Configuración del backtest
     symbol = 'SPY'
     start_date = '2010-01-01'
     end_date = '2023-05-31'
     initial_capital = 10000
+    benchmarks = ['QQQ', 'IWM']  # Añadimos benchmarks adicionales
 
     # Creamos una instancia de la estrategia con sus parámetros específicos
     strategy_params = {
@@ -312,8 +367,7 @@ def main(log_to_file=False):
     strategy = SimpleMovingAverageCrossover(strategy_params)
 
     # Ejecutamos el backtesting
-    run_backtest(symbol, start_date, end_date, strategy, initial_capital)
-
+    run_backtest(symbol, start_date, end_date, strategy, initial_capital, benchmarks)
 
 if __name__ == "__main__":
     main(log_to_file=True)
