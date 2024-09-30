@@ -26,11 +26,7 @@ Arquitectura y módulos principales
    - Calcula métricas de rendimiento (retorno, Sharpe ratio, drawdown, etc.).
    - Genera gráficos y reportes.
 
-6. Módulo de Configuración (Config):
-
-   - Maneja los parámetros de configuración para el backtesting (fechas, comisiones, etc.).
-
-7. Módulo Principal (Main):
+6. Módulo Principal (Main):
    - Orquesta la ejecución del backtesting, conectando todos los módulos.
 
 Esta arquitectura permite la modularidad y flexibilidad que has solicitado. Los usuarios podrán implementar sus propias estrategias heredando de la clase Strategy, y podrán cargar diferentes conjuntos de datos implementando sus propios DataLoaders.
@@ -60,7 +56,7 @@ POSIBLES MEJORAS DEL FRAMEWORK
 
    - Mejora: Añadir un módulo de gestión de riesgos que pueda implementar stop-loss, take-profit, y otras estrategias de control de riesgos.
 
-6. Análisis de Resultados:
+6. Análisis de Resultados: -> HECHO
 
    - Positivo: El cálculo de métricas básicas y la visualización de resultados es bueno.
    - Mejora: Añadir más métricas de rendimiento (drawdown máximo, ratio de Sortino, alpha, beta, etc.) y permitir la comparación con múltiples benchmarks.
