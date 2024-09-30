@@ -1,4 +1,4 @@
-Arquitectura y módulos principales
+<h2>ARQUITECTURA Y MODULOS PRINCIPALES</h2>
 
 1. Módulo de Datos (DataLoader):
 
@@ -31,7 +31,7 @@ Arquitectura y módulos principales
 
 Esta arquitectura permite la modularidad y flexibilidad que has solicitado. Los usuarios podrán implementar sus propias estrategias heredando de la clase Strategy, y podrán cargar diferentes conjuntos de datos implementando sus propios DataLoaders.
 
-<BOLD>EXPLICACION DE LA ESTRUCTURA DEL PROYECTO</BOLD>
+<h2>EXPLICACION DE LA ESTRUCTURA DEL PROYECTO</h2>
 
 Explicación de la estructura:
 
@@ -54,7 +54,7 @@ Esta estructura separa claramente las diferentes funcionalidades del framework e
 
 Esta estructura también facilita la expansión futura del framework, permitiendo añadir fácilmente nuevas estrategias, métodos de análisis o funcionalidades adicionales.
 
-POSIBLES MEJORAS DEL FRAMEWORK
+<h2>POSIBLES MEJORAS DEL FRAMEWORK</h2>
 
 1. Modularidad y Extensibilidad:
 
