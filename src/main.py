@@ -8,7 +8,7 @@ from matplotlib.dates import DateFormatter
 import logging
 import os
 
-# Configuración del logging
+# Configuración del logging.
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
