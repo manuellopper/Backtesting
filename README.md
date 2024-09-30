@@ -31,6 +31,29 @@ Arquitectura y módulos principales
 
 Esta arquitectura permite la modularidad y flexibilidad que has solicitado. Los usuarios podrán implementar sus propias estrategias heredando de la clase Strategy, y podrán cargar diferentes conjuntos de datos implementando sus propios DataLoaders.
 
+<BOLD>EXPLICACION DE LA ESTRUCTURA DEL PROYECTO</BOLD>
+
+Explicación de la estructura:
+
+1. `src/`: Contiene todo el código fuente del framework.
+
+- `data/`: Módulo para la carga y manejo de datos.
+- `strategies/`: Módulo para las estrategias de inversión.
+- `portfolio/`: Módulo para el manejo del portafolio.
+- `backtester/`: Módulo para el backtesting.
+- `analysis/`: Módulo para el análisis de resultados.
+
+2. `logs/`: Directorio para almacenar los archivos de log.
+3. `plots/`: Directorio para guardar los gráficos generados.
+4. `tests/`: Directorio para los tests unitarios de cada módulo.
+5. `main.py`: Script principal para ejecutar el backtesting.
+6. `requirements.txt`: Archivo con las dependencias del proyecto.
+7. `README.md`: Documentación general del proyecto.
+
+Esta estructura separa claramente las diferentes funcionalidades del framework en módulos distintos, lo que mejora la organización y facilita el mantenimiento del código. Además, la inclusión de un directorio de tests promueve buenas prácticas de desarrollo.
+
+Esta estructura también facilita la expansión futura del framework, permitiendo añadir fácilmente nuevas estrategias, métodos de análisis o funcionalidades adicionales.
+
 POSIBLES MEJORAS DEL FRAMEWORK
 
 1. Modularidad y Extensibilidad:
