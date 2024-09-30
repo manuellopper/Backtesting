@@ -3,7 +3,7 @@ import os
 import sys
 from typing import List
 
-from src.strategies.simple_moving_average_crossover import SimpleMovingAverageCrossover
+from src.strategies.sma_rsi_bollinger_strategy import SmaRsiBollingerStrategy
 from src.strategies.breakout_strategy import BreakoutStrategy
 from src.backtester.backtester import Backtester
 from src.analysis.result_analyzer import ResultAnalyzer
@@ -119,11 +119,20 @@ def main(log_to_file=False):
     # strategy = SimpleMovingAverageCrossover(strategy_params)
 
     # Ejemplo de uso de la estrategia BreakoutStrategy
+    #strategy_params = {
+    #   'lookback_period': 20,
+    #    'breakout_threshold': 0.02  # 2%
+    #}
+    #strategy = BreakoutStrategy(strategy_params)
+
     strategy_params = {
-        'lookback_period': 20,
-        'breakout_threshold': 0.02  # 2%
+        'sma_short': 50,
+        'sma_long': 200,
+        'rsi_period': 14,
+        'bb_period': 20,
+        'bb_std': 2
     }
-    strategy = BreakoutStrategy(strategy_params)
+    strategy = SmaRsiBollingerStrategy(strategy_params)
 
     # Ejecutamos el backtesting
     run_backtest(symbol, start_date, end_date, strategy, initial_capital, benchmarks)
