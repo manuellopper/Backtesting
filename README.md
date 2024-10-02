@@ -56,6 +56,11 @@ Esta estructura también facilita la expansión futura del framework, permitiend
 
 <h2>POSIBLES MEJORAS DEL FRAMEWORK</h2>
 
+NUEVOS:
+
+- Hacer librerías de indicadores técnicos (MACD, RSI, etc.) de manera que cada estrategia no tenga que implementar el código para programar el cálculo de cada indicador.
+- Permitir que el backtester reciba señales de diferentes estrategias de inversión -> HECHO
+
 1. Modularidad y Extensibilidad:
 
    - Positivo: La estructura modular (DataLoader, Strategy, Backtester, Portfolio, ResultAnalyzer) es buena y permite una fácil extensión.

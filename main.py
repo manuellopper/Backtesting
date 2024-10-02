@@ -3,7 +3,7 @@ import os
 import sys
 from typing import List
 
-from src.strategies.sma_rsi_bollinger_strategy import SmaRsiBollingerStrategy
+from src.strategies.simple_moving_average_crossover import SimpleMovingAverageCrossover
 from src.strategies.breakout_strategy import BreakoutStrategy
 from src.backtester.backtester import Backtester
 from src.analysis.result_analyzer import ResultAnalyzer
@@ -84,10 +84,10 @@ def run_backtest(symbol: str, start_date: str, end_date: str, strategy: Strategy
 
 def main(log_to_file=False):
     """
-    Función principal que configura y ejecuta el proceso de backtesting.
+    Función principal que configura y ejecuta el proceso de backtesting con múltiples estrategias.
 
     Esta función establece los parámetros del backtesting, incluyendo el símbolo,
-    las fechas, el capital inicial, los benchmarks y la estrategia a utilizar.
+    las fechas, el capital inicial, los benchmarks y las estrategias a utilizar.
     Luego, ejecuta el backtesting y analiza los resultados.
 
     Args:
@@ -109,33 +109,21 @@ def main(log_to_file=False):
     initial_capital = 10000
     benchmarks = ['URTH', 'SPY']
 
-    # Creamos una instancia de la estrategia con sus parámetros específicos
-    
-    # Ejemplo de uso de la estrategia SimpleMovingAverageCrossover
-    # strategy_params = {
-    #     'short_window': 50,
-    #     'long_window': 200
-    # }
-    # strategy = SimpleMovingAverageCrossover(strategy_params)
+    # Creamos instancias de múltiples estrategias
+    sma_strategy = SimpleMovingAverageCrossover({'short_window': 50, 'long_window': 200})
+    breakout_strategy = BreakoutStrategy({'lookback_period': 20, 'breakout_threshold': 0.02})
 
-    # Ejemplo de uso de la estrategia BreakoutStrategy
-    #strategy_params = {
-    #   'lookback_period': 20,
-    #    'breakout_threshold': 0.02  # 2%
-    #}
-    #strategy = BreakoutStrategy(strategy_params)
+    strategies = [sma_strategy, breakout_strategy]
 
-    strategy_params = {
-        'sma_short': 50,
-        'sma_long': 200,
-        'rsi_period': 14,
-        'bb_period': 20,
-        'bb_std': 2
-    }
-    strategy = SmaRsiBollingerStrategy(strategy_params)
+    # Ejecutamos el backtesting con múltiples estrategias
+    backtester = Backtester(symbol, start_date, end_date, strategies, initial_capital)
+    backtester.run()
 
-    # Ejecutamos el backtesting
-    run_backtest(symbol, start_date, end_date, strategy, initial_capital, benchmarks)
+    analyzer = ResultAnalyzer(backtester.results, benchmarks, initial_capital)
+    analyzer.calculate_returns()
+    analyzer.calculate_metrics()
+    analyzer.plot_results()
+    logger.info("Backtesting completado")
 
 if __name__ == "__main__":
     main(log_to_file=True)
