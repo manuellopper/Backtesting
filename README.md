@@ -26,7 +26,13 @@
    - Calcula métricas de rendimiento (retorno, Sharpe ratio, drawdown, etc.).
    - Genera gráficos y reportes.
 
-6. Módulo Principal (Main):
+6. Módulo de Indicadores Técnicos (Indicators)
+
+   - Responsable de proporcionar una variedad de indicadores técnicos para su uso en estrategias de trading.
+   - Implementa indicadores en modo streaming, actualizándose con cada nuevo dato recibido.
+   - Ofrece una interfaz común para todos los indicadores, facilitando su integración en las estrategias.
+
+7. Módulo Principal (Main):
    - Orquesta la ejecución del backtesting, conectando todos los módulos.
 
 Esta arquitectura permite la modularidad y flexibilidad que has solicitado. Los usuarios podrán implementar sus propias estrategias heredando de la clase Strategy, y podrán cargar diferentes conjuntos de datos implementando sus propios DataLoaders.
@@ -42,6 +48,7 @@ Explicación de la estructura:
 - `portfolio/`: Módulo para el manejo del portafolio.
 - `backtester/`: Módulo para el backtesting.
 - `analysis/`: Módulo para el análisis de resultados.
+- `indicators/`: Módulo para los indicadores técnicos.
 
 2. `logs/`: Directorio para almacenar los archivos de log.
 3. `plots/`: Directorio para guardar los gráficos generados.

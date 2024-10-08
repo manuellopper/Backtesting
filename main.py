@@ -3,11 +3,13 @@ import os
 import sys
 from typing import List
 
+from src.strategies.sma_rsi_bollinger_strategy import SmaRsiBollingerStrategy
 from src.strategies.simple_moving_average_crossover import SimpleMovingAverageCrossover
 from src.strategies.breakout_strategy import BreakoutStrategy
 from src.backtester.backtester import Backtester
 from src.analysis.result_analyzer import ResultAnalyzer
 from src.strategies.base_strategy import Strategy
+
 
 def setup_logging(log_to_file=False):
     """
@@ -49,38 +51,6 @@ def setup_logging(log_to_file=False):
 
     return logger
 
-def run_backtest(symbol: str, start_date: str, end_date: str, strategy: Strategy, initial_capital: float, benchmarks: List[str]):
-    """
-    Ejecuta un backtesting completo para una estrategia dada.
-
-    Esta función realiza el backtesting de una estrategia de trading para un símbolo
-    específico en un período de tiempo determinado. También compara los resultados
-    con los benchmarks especificados.
-
-    Args:
-        symbol (str): El símbolo del activo a analizar.
-        start_date (str): La fecha de inicio del período de backtesting (formato: 'YYYY-MM-DD').
-        end_date (str): La fecha de fin del período de backtesting (formato: 'YYYY-MM-DD').
-        strategy (Strategy): La estrategia de trading a evaluar.
-        initial_capital (float): El capital inicial para el backtesting.
-        benchmarks (List[str]): Lista de símbolos de los benchmarks para comparación.
-
-    Returns:
-        None
-
-    Raises:
-        ValueError: Si los parámetros no son válidos.
-    """
-    logger.info(f"Iniciando backtesting para {symbol} desde {start_date} hasta {end_date}")
-
-    backtester = Backtester(symbol, start_date, end_date, strategy, initial_capital)
-    backtester.run()
-
-    analyzer = ResultAnalyzer(backtester.results, benchmarks, initial_capital)
-    analyzer.calculate_returns()
-    analyzer.calculate_metrics()
-    analyzer.plot_results()
-    logger.info("Backtesting completado")
 
 def main(log_to_file=False):
     """
@@ -101,7 +71,7 @@ def main(log_to_file=False):
     """
     global logger
     logger = setup_logging(log_to_file)
-    
+
     # Configuración del backtest
     symbol = 'SPY'
     start_date = '2015-01-01'
@@ -110,13 +80,17 @@ def main(log_to_file=False):
     benchmarks = ['URTH', 'SPY']
 
     # Creamos instancias de múltiples estrategias
-    sma_strategy = SimpleMovingAverageCrossover({'short_window': 50, 'long_window': 200})
-    breakout_strategy = BreakoutStrategy({'lookback_period': 20, 'breakout_threshold': 0.02})
+    sma_strategy = SimpleMovingAverageCrossover(
+        {'short_window': 50, 'long_window': 200})
+    breakout_strategy = BreakoutStrategy(
+        {'lookback_period': 20, 'breakout_threshold': 0.02})
+    bollinger_strategy = SmaRsiBollingerStrategy({'sma_short': 10,'sma_long': 30,'rsi_period': 14,'bb_period': 20,'bb_std': 2})
 
-    strategies = [sma_strategy, breakout_strategy]
+    strategies = [sma_strategy, breakout_strategy,bollinger_strategy ]
 
     # Ejecutamos el backtesting con múltiples estrategias
-    backtester = Backtester(symbol, start_date, end_date, strategies, initial_capital)
+    backtester = Backtester(symbol, start_date, end_date,
+                            strategies, initial_capital)
     backtester.run()
 
     analyzer = ResultAnalyzer(backtester.results, benchmarks, initial_capital)
@@ -124,6 +98,7 @@ def main(log_to_file=False):
     analyzer.calculate_metrics()
     analyzer.plot_results()
     logger.info("Backtesting completado")
+
 
 if __name__ == "__main__":
     main(log_to_file=True)
